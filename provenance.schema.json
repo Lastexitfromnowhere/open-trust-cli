@@ -1,0 +1,165 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://open-trust.dev/schema/v1/provenance.json",
+  "title": "Open-Trust Provenance Manifest",
+  "description": "Schema for the open-trust provenance.json trust manifest (v1.0)",
+  "type": "object",
+  "required": ["schema_version", "artifact", "identity", "signature", "attestations", "trust_chain"],
+  "additionalProperties": false,
+
+  "properties": {
+
+    "schema_version": {
+      "type": "string",
+      "description": "Semver-like schema version, e.g. \"1.0\"",
+      "pattern": "^\\d+\\.\\d+$"
+    },
+
+    "artifact": {
+      "type": "object",
+      "required": ["name", "version", "sha256", "sha512", "build_timestamp", "build_env"],
+      "additionalProperties": false,
+      "properties": {
+        "name":    { "type": "string", "minLength": 1 },
+        "version": { "type": "string" },
+        "sha256":  { "type": "string", "pattern": "^[0-9a-f]{64}$",  "description": "SHA-256 hex digest of the binary" },
+        "sha512":  { "type": "string", "pattern": "^[0-9a-f]{128}$", "description": "SHA-512 hex digest of the binary" },
+        "build_timestamp": {
+          "type": "string",
+          "format": "date-time",
+          "description": "RFC3339 UTC timestamp of when the binary was signed"
+        },
+        "build_env": {
+          "type": "object",
+          "required": ["os", "arch", "compiler_version"],
+          "additionalProperties": false,
+          "properties": {
+            "os":               { "type": "string" },
+            "arch":             { "type": "string" },
+            "compiler_version": { "type": "string" }
+          }
+        }
+      }
+    },
+
+    "identity": {
+      "type": "object",
+      "required": ["display_name", "pubkey_ed25519", "pubkey_fingerprint", "social_proofs"],
+      "additionalProperties": false,
+      "properties": {
+        "display_name": { "type": "string", "minLength": 1 },
+        "pubkey_ed25519": {
+          "type": "string",
+          "description": "Base64url (no padding) encoded Ed25519 public key (32 bytes)"
+        },
+        "pubkey_fingerprint": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{64}$",
+          "description": "SHA-256 hex digest of the raw public key bytes"
+        },
+        "social_proofs": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": ["platform", "handle", "proof_url"],
+            "additionalProperties": false,
+            "properties": {
+              "platform": {
+                "type": "string",
+                "description": "e.g. github, mastodon, keybase, gitlab"
+              },
+              "handle":   { "type": "string" },
+              "proof_url": {
+                "type": "string",
+                "format": "uri",
+                "description": "Publicly readable URL that contains the pubkey_fingerprint"
+              }
+            }
+          }
+        }
+      }
+    },
+
+    "signature": {
+      "type": "object",
+      "required": ["algorithm", "signed_payload", "value", "timestamp"],
+      "additionalProperties": false,
+      "properties": {
+        "algorithm": {
+          "type": "string",
+          "enum": ["Ed25519"],
+          "description": "Always Ed25519 in this version"
+        },
+        "signed_payload": {
+          "type": "string",
+          "description": "Base64url of the raw bytes that were signed: sha256|sha512|timestamp"
+        },
+        "value": {
+          "type": "string",
+          "description": "Base64url of the 64-byte Ed25519 signature"
+        },
+        "timestamp": {
+          "type": "string",
+          "format": "date-time",
+          "description": "RFC3339 UTC; included in signed_payload to prevent replay"
+        }
+      }
+    },
+
+    "attestations": {
+      "type": "array",
+      "description": "Signed endorsements from peer developers",
+      "items": {
+        "type": "object",
+        "required": ["attester_pubkey", "attester_fingerprint", "statement", "scope", "signature", "timestamp"],
+        "additionalProperties": false,
+        "properties": {
+          "attester_pubkey": {
+            "type": "string",
+            "description": "Base64url encoded Ed25519 public key of the attester"
+          },
+          "attester_fingerprint": {
+            "type": "string",
+            "pattern": "^[0-9a-f]{64}$"
+          },
+          "statement": {
+            "type": "string",
+            "minLength": 1,
+            "description": "Human-readable description of what was verified"
+          },
+          "scope": {
+            "type": "string",
+            "enum": ["source", "binary", "identity"],
+            "description": "What aspect the attester verified"
+          },
+          "signature": {
+            "type": "string",
+            "description": "Base64url Ed25519 signature over: artifact.sha256|statement|timestamp"
+          },
+          "timestamp": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      }
+    },
+
+    "trust_chain": {
+      "type": "object",
+      "required": ["threshold"],
+      "additionalProperties": false,
+      "properties": {
+        "threshold": {
+          "type": "integer",
+          "minimum": 1,
+          "description": "Minimum number of valid peer attestations for TRUSTED status"
+        },
+        "registry_cid": {
+          "type": "string",
+          "description": "Optional IPFS CID or Git commit SHA where this provenance is anchored"
+        }
+      }
+    }
+
+  }
+}

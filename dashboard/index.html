@@ -1,0 +1,1225 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>OPEN-TRUST — Vérifiez. Sans faire confiance.</title>
+<style>
+/* ── Reset & Base ────────────────────────────────────────────────────────── */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+:root {
+  --bg:         #070a12;
+  --surface:    #0c1120;
+  --surface2:   #111828;
+  --border:     rgba(255,255,255,0.07);
+  --border-hi:  rgba(99,179,237,0.35);
+
+  --cyan:       #38bdf8;
+  --cyan-dim:   rgba(56,189,248,0.12);
+  --cyan-glow:  rgba(56,189,248,0.25);
+  --green:      #34d399;
+  --green-dim:  rgba(52,211,153,0.12);
+  --red:        #f87171;
+  --red-dim:    rgba(248,113,113,0.12);
+  --amber:      #fbbf24;
+  --amber-dim:  rgba(251,191,36,0.12);
+  --purple:     #a78bfa;
+  --purple-dim: rgba(167,139,250,0.12);
+
+  --text:       #e2e8f0;
+  --text-muted: #64748b;
+  --text-dim:   #94a3b8;
+  --mono:       'JetBrains Mono', 'Fira Code', 'Cascadia Code', ui-monospace, monospace;
+  --sans:       'Inter', system-ui, -apple-system, sans-serif;
+
+  --radius:     10px;
+  --radius-sm:  6px;
+}
+
+html { scroll-behavior: smooth; }
+
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: var(--sans);
+  font-size: 15px;
+  line-height: 1.6;
+  min-height: 100vh;
+  overflow-x: hidden;
+}
+
+/* ── Noise texture overlay ────────────────────────────────────────────────── */
+body::before {
+  content: '';
+  position: fixed; inset: 0;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.04'/%3E%3C/svg%3E");
+  background-size: 150px;
+  pointer-events: none;
+  z-index: 0;
+  opacity: 0.6;
+}
+
+/* ── Layout ──────────────────────────────────────────────────────────────── */
+.wrapper {
+  position: relative; z-index: 1;
+  max-width: 860px;
+  margin: 0 auto;
+  padding: 0 24px 80px;
+}
+
+/* ── Header ──────────────────────────────────────────────────────────────── */
+header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 32px 0 48px;
+  border-bottom: 1px solid var(--border);
+  margin-bottom: 48px;
+}
+
+.logo {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+
+.logo-icon {
+  width: 40px; height: 40px;
+  border-radius: 10px;
+  background: linear-gradient(135deg, #1e3a5f, #0c1f3d);
+  border: 1px solid var(--border-hi);
+  display: grid; place-items: center;
+  font-size: 20px;
+}
+
+.logo-text {
+  display: flex; flex-direction: column;
+}
+.logo-name {
+  font-family: var(--mono);
+  font-size: 17px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  color: var(--cyan);
+}
+.logo-tagline {
+  font-size: 11px;
+  color: var(--text-muted);
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.header-badge {
+  font-family: var(--mono);
+  font-size: 11px;
+  color: var(--text-muted);
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 20px;
+  padding: 5px 12px;
+}
+
+/* ── Hero ────────────────────────────────────────────────────────────────── */
+.hero {
+  text-align: center;
+  margin-bottom: 48px;
+}
+.hero h1 {
+  font-size: clamp(26px, 5vw, 38px);
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  background: linear-gradient(135deg, #e2e8f0 30%, var(--cyan) 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  margin-bottom: 12px;
+}
+.hero p {
+  color: var(--text-dim);
+  font-size: 16px;
+  max-width: 520px;
+  margin: 0 auto 20px;
+}
+
+/* ── Zero-upload badge ────────────────────────────────────────────────────── */
+.zero-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  background: var(--green-dim);
+  border: 1px solid rgba(52,211,153,0.2);
+  border-radius: 20px;
+  padding: 6px 16px;
+  font-size: 12px;
+  color: var(--green);
+  font-weight: 500;
+}
+.zero-badge svg { flex-shrink: 0; }
+
+/* ── Card ────────────────────────────────────────────────────────────────── */
+.card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 24px;
+  margin-bottom: 20px;
+  transition: border-color 0.2s;
+}
+.card:hover { border-color: rgba(255,255,255,0.12); }
+
+.card-title {
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: var(--text-muted);
+  margin-bottom: 16px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.card-title .step-num {
+  width: 20px; height: 20px;
+  border-radius: 50%;
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  display: grid; place-items: center;
+  font-size: 10px;
+  color: var(--cyan);
+}
+
+/* ── Drop zone ────────────────────────────────────────────────────────────── */
+.drop-zone {
+  border: 2px dashed var(--border);
+  border-radius: var(--radius);
+  padding: 44px 24px;
+  text-align: center;
+  cursor: pointer;
+  transition: all 0.25s ease;
+  position: relative;
+  background: var(--surface2);
+}
+.drop-zone:hover,
+.drop-zone.drag-over {
+  border-color: var(--cyan);
+  background: var(--cyan-dim);
+  box-shadow: 0 0 40px rgba(56,189,248,0.06);
+}
+.drop-zone input[type=file] {
+  position: absolute; inset: 0;
+  opacity: 0; cursor: pointer;
+}
+.drop-zone .drop-icon {
+  font-size: 32px;
+  margin-bottom: 12px;
+  display: block;
+  opacity: 0.6;
+}
+.drop-zone .drop-title {
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--text);
+  margin-bottom: 6px;
+}
+.drop-zone .drop-hint {
+  font-size: 12px;
+  color: var(--text-muted);
+}
+.drop-zone .drop-hint code {
+  font-family: var(--mono);
+  background: rgba(255,255,255,0.06);
+  padding: 1px 6px;
+  border-radius: 4px;
+  font-size: 11px;
+}
+
+/* ── File pills ───────────────────────────────────────────────────────────── */
+.files-list {
+  display: flex; flex-wrap: wrap; gap: 8px;
+  margin-top: 12px;
+}
+.file-pill {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 5px 10px;
+  font-size: 12px;
+  font-family: var(--mono);
+  color: var(--text-dim);
+  animation: fadein 0.2s ease;
+}
+.file-pill.type-binary { border-color: rgba(167,139,250,0.3); color: var(--purple); }
+.file-pill.type-provenance { border-color: rgba(56,189,248,0.3); color: var(--cyan); }
+.file-pill.type-unknown { border-color: var(--border); color: var(--text-muted); }
+.file-pill .dot { width: 6px; height: 6px; border-radius: 50%; background: currentColor; }
+
+/* ── Registry input ───────────────────────────────────────────────────────── */
+.registry-row {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+}
+.input-wrap {
+  flex: 1;
+  position: relative;
+}
+.input-wrap label {
+  display: block;
+  font-size: 11px;
+  color: var(--text-muted);
+  margin-bottom: 6px;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+.input-wrap input {
+  width: 100%;
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  color: var(--text);
+  font-family: var(--mono);
+  font-size: 12px;
+  padding: 10px 14px;
+  transition: border-color 0.2s, box-shadow 0.2s;
+  outline: none;
+}
+.input-wrap input:focus {
+  border-color: var(--cyan);
+  box-shadow: 0 0 0 3px rgba(56,189,248,0.1);
+}
+.input-wrap input::placeholder { color: var(--text-muted); opacity: 0.6; }
+
+/* ── Toggle ──────────────────────────────────────────────────────────────── */
+.toggle-wrap {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 12px;
+  color: var(--text-muted);
+  cursor: pointer;
+  user-select: none;
+  padding-top: 20px;
+}
+.toggle {
+  width: 36px; height: 20px;
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  position: relative;
+  transition: background 0.2s;
+  cursor: pointer;
+}
+.toggle::after {
+  content: '';
+  position: absolute;
+  top: 3px; left: 3px;
+  width: 12px; height: 12px;
+  border-radius: 50%;
+  background: var(--text-muted);
+  transition: transform 0.2s, background 0.2s;
+}
+.toggle.on { background: rgba(56,189,248,0.2); border-color: var(--cyan); }
+.toggle.on::after { transform: translateX(16px); background: var(--cyan); }
+
+/* ── Verify button ───────────────────────────────────────────────────────── */
+.btn-verify {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  width: 100%;
+  padding: 15px;
+  background: linear-gradient(135deg, #1e3a5f, #0f2340);
+  border: 1px solid rgba(56,189,248,0.3);
+  border-radius: var(--radius);
+  color: var(--cyan);
+  font-size: 14px;
+  font-weight: 600;
+  font-family: var(--mono);
+  letter-spacing: 0.06em;
+  cursor: pointer;
+  transition: all 0.2s;
+  margin-top: 8px;
+}
+.btn-verify:hover:not(:disabled) {
+  background: linear-gradient(135deg, #234572, #132a50);
+  border-color: var(--cyan);
+  box-shadow: 0 0 30px rgba(56,189,248,0.15);
+}
+.btn-verify:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+.btn-verify .spinner {
+  display: none;
+  width: 16px; height: 16px;
+  border: 2px solid rgba(56,189,248,0.3);
+  border-top-color: var(--cyan);
+  border-radius: 50%;
+  animation: spin 0.7s linear infinite;
+}
+.btn-verify.loading .spinner { display: block; }
+.btn-verify.loading .btn-text { opacity: 0.6; }
+
+/* ── Progress bar ────────────────────────────────────────────────────────── */
+.progress-wrap {
+  margin-top: 16px;
+  display: none;
+}
+.progress-wrap.visible { display: block; }
+.progress-label {
+  font-size: 11px;
+  color: var(--text-muted);
+  margin-bottom: 6px;
+  font-family: var(--mono);
+}
+.progress-bar-track {
+  height: 4px;
+  background: var(--surface2);
+  border-radius: 2px;
+  overflow: hidden;
+}
+.progress-bar-fill {
+  height: 100%;
+  background: linear-gradient(90deg, var(--cyan), var(--purple));
+  border-radius: 2px;
+  transition: width 0.1s linear;
+  width: 0%;
+}
+
+/* ── Results panel ───────────────────────────────────────────────────────── */
+#results {
+  display: none;
+  animation: fadein 0.4s ease;
+}
+#results.visible { display: block; }
+
+/* ── Check row ───────────────────────────────────────────────────────────── */
+.check-row {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 14px 0;
+  border-bottom: 1px solid var(--border);
+  animation: slidein 0.25s ease both;
+}
+.check-row:last-child { border-bottom: none; }
+
+.check-icon {
+  width: 28px; height: 28px;
+  border-radius: 50%;
+  display: grid; place-items: center;
+  flex-shrink: 0;
+  font-size: 13px;
+  margin-top: 1px;
+}
+.check-icon.ok     { background: var(--green-dim);  color: var(--green);  border: 1px solid rgba(52,211,153,0.25); }
+.check-icon.fail   { background: var(--red-dim);    color: var(--red);    border: 1px solid rgba(248,113,113,0.25); }
+.check-icon.warn   { background: var(--amber-dim);  color: var(--amber);  border: 1px solid rgba(251,191,36,0.25); }
+.check-icon.skip   { background: var(--surface2);   color: var(--text-muted); border: 1px solid var(--border); }
+
+.check-content { flex: 1; min-width: 0; }
+.check-title   { font-weight: 600; font-size: 14px; margin-bottom: 4px; }
+.check-detail  { font-size: 12px; color: var(--text-dim); font-family: var(--mono); word-break: break-all; }
+.check-error   { font-size: 12px; color: var(--red); margin-top: 4px; }
+
+/* ── Hash display ────────────────────────────────────────────────────────── */
+.hash-value {
+  font-family: var(--mono);
+  font-size: 11px;
+  color: var(--text-muted);
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  padding: 4px 8px;
+  margin-top: 4px;
+  word-break: break-all;
+  display: block;
+}
+.hash-value.match {
+  border-color: rgba(52,211,153,0.2);
+  color: var(--green);
+  background: var(--green-dim);
+}
+.hash-value.mismatch {
+  border-color: rgba(248,113,113,0.2);
+  color: var(--red);
+  background: var(--red-dim);
+}
+
+/* ── Trust badge ─────────────────────────────────────────────────────────── */
+.trust-badge {
+  margin-top: 24px;
+  border-radius: var(--radius);
+  overflow: hidden;
+  border: 1px solid var(--border);
+  animation: fadein 0.5s ease 0.2s both;
+}
+
+.badge-header {
+  padding: 20px 24px;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+.badge-header.trusted  { background: linear-gradient(135deg, rgba(52,211,153,0.12), rgba(52,211,153,0.04)); border-bottom: 1px solid rgba(52,211,153,0.2); }
+.badge-header.peer     { background: linear-gradient(135deg, rgba(251,191,36,0.10), rgba(251,191,36,0.03)); border-bottom: 1px solid rgba(251,191,36,0.2); }
+.badge-header.self     { background: linear-gradient(135deg, rgba(56,189,248,0.08), rgba(56,189,248,0.02)); border-bottom: 1px solid rgba(56,189,248,0.15); }
+.badge-header.unknown  { background: linear-gradient(135deg, rgba(100,116,139,0.1), rgba(100,116,139,0.02)); border-bottom: 1px solid var(--border); }
+
+.badge-icon {
+  width: 48px; height: 48px;
+  border-radius: 12px;
+  display: grid; place-items: center;
+  font-size: 22px;
+  flex-shrink: 0;
+}
+.trusted  .badge-icon { background: var(--green-dim);  border: 1px solid rgba(52,211,153,0.25); }
+.peer     .badge-icon { background: var(--amber-dim);  border: 1px solid rgba(251,191,36,0.25); }
+.self     .badge-icon { background: var(--cyan-dim);   border: 1px solid rgba(56,189,248,0.2); }
+.unknown  .badge-icon { background: var(--surface2);   border: 1px solid var(--border); }
+
+.badge-meta { flex: 1; min-width: 0; }
+.badge-developer { font-size: 18px; font-weight: 700; }
+.badge-artifact  { font-size: 12px; color: var(--text-muted); font-family: var(--mono); }
+
+.badge-level {
+  font-family: var(--mono);
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  padding: 5px 12px;
+  border-radius: 20px;
+}
+.trusted .badge-level  { background: var(--green-dim); color: var(--green); border: 1px solid rgba(52,211,153,0.25); }
+.peer    .badge-level  { background: var(--amber-dim); color: var(--amber); border: 1px solid rgba(251,191,36,0.25); }
+.self    .badge-level  { background: var(--cyan-dim);  color: var(--cyan);  border: 1px solid rgba(56,189,248,0.2); }
+.unknown .badge-level  { background: var(--surface2);  color: var(--text-muted); border: 1px solid var(--border); }
+
+.badge-body { padding: 0; background: var(--surface); }
+
+.badge-section {
+  padding: 16px 24px;
+  border-bottom: 1px solid var(--border);
+}
+.badge-section:last-child { border-bottom: none; }
+.badge-section-title {
+  font-size: 10px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: var(--text-muted);
+  margin-bottom: 10px;
+}
+
+.social-list { display: flex; flex-wrap: wrap; gap: 8px; }
+.social-chip {
+  display: flex; align-items: center; gap: 6px;
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 5px 10px;
+  font-size: 12px;
+  text-decoration: none;
+  color: var(--text-dim);
+  transition: all 0.15s;
+}
+.social-chip:hover { border-color: var(--cyan); color: var(--cyan); }
+.social-chip .platform-icon { font-size: 13px; }
+
+.attestation-item {
+  display: flex;
+  gap: 10px;
+  padding: 10px 0;
+  border-bottom: 1px solid var(--border);
+  font-size: 12px;
+}
+.attestation-item:last-child { border-bottom: none; }
+.att-valid   { color: var(--green); }
+.att-invalid { color: var(--red); }
+.att-scope {
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  padding: 1px 6px;
+  font-family: var(--mono);
+  font-size: 10px;
+  color: var(--text-muted);
+  flex-shrink: 0;
+}
+.att-statement { color: var(--text-dim); flex: 1; }
+.att-fp {
+  font-family: var(--mono);
+  font-size: 10px;
+  color: var(--text-muted);
+  flex-shrink: 0;
+}
+
+.fp-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.fp-value {
+  font-family: var(--mono);
+  font-size: 11px;
+  color: var(--text-muted);
+  word-break: break-all;
+  flex: 1;
+}
+.copy-btn {
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  padding: 3px 8px;
+  font-size: 10px;
+  color: var(--text-muted);
+  cursor: pointer;
+  transition: all 0.15s;
+  flex-shrink: 0;
+  font-family: var(--mono);
+}
+.copy-btn:hover { border-color: var(--cyan); color: var(--cyan); }
+
+/* ── Separator ───────────────────────────────────────────────────────────── */
+.section-sep {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin: 32px 0;
+  color: var(--text-muted);
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+}
+.section-sep::before,
+.section-sep::after {
+  content: '';
+  flex: 1;
+  height: 1px;
+  background: var(--border);
+}
+
+/* ── Footer ──────────────────────────────────────────────────────────────── */
+footer {
+  text-align: center;
+  padding: 32px 0;
+  border-top: 1px solid var(--border);
+  margin-top: 64px;
+  font-size: 12px;
+  color: var(--text-muted);
+}
+footer a { color: var(--cyan); text-decoration: none; }
+footer a:hover { text-decoration: underline; }
+
+/* ── Utilities ───────────────────────────────────────────────────────────── */
+.mono { font-family: var(--mono); }
+.hidden { display: none !important; }
+
+/* ── Animations ──────────────────────────────────────────────────────────── */
+@keyframes fadein  { from { opacity: 0; } to { opacity: 1; } }
+@keyframes slidein { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
+@keyframes spin    { to { transform: rotate(360deg); } }
+@keyframes pulse   { 0%,100% { opacity:1; } 50% { opacity:0.5; } }
+
+/* ── Responsive ──────────────────────────────────────────────────────────── */
+@media (max-width: 600px) {
+  .registry-row { flex-direction: column; }
+  .toggle-wrap  { padding-top: 0; }
+  .badge-header { flex-wrap: wrap; }
+}
+</style>
+</head>
+<body>
+<div class="wrapper">
+
+  <!-- Header -->
+  <header>
+    <div class="logo">
+      <div class="logo-icon">🔐</div>
+      <div class="logo-text">
+        <span class="logo-name">OPEN-TRUST</span>
+        <span class="logo-tagline">Decentralized Code Signing</span>
+      </div>
+    </div>
+    <div class="header-badge">v1.0 · Ed25519 · Web Crypto API</div>
+  </header>
+
+  <!-- Hero -->
+  <section class="hero">
+    <h1>Vérifiez. Sans faire confiance.</h1>
+    <p>Validez l'intégrité d'un binaire et l'identité de son développeur,<br>
+       sans serveur, sans compte, sans upload.</p>
+    <div class="zero-badge">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+        <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
+      </svg>
+      Zéro Upload — votre fichier ne quitte jamais votre ordinateur
+    </div>
+  </section>
+
+  <!-- Step 1: Drop files -->
+  <div class="card">
+    <div class="card-title"><span class="step-num">1</span>Déposez vos fichiers</div>
+
+    <div class="drop-zone" id="dropZone">
+      <input type="file" id="fileInput" multiple accept="*">
+      <span class="drop-icon">📂</span>
+      <div class="drop-title">Glissez vos fichiers ici</div>
+      <div class="drop-hint">
+        Déposez votre <code>binaire</code> + votre <code>provenance.json</code><br>
+        ou cliquez pour parcourir
+      </div>
+    </div>
+
+    <div class="files-list" id="filesList"></div>
+  </div>
+
+  <!-- Step 2: Registry -->
+  <div class="card">
+    <div class="card-title"><span class="step-num">2</span>Registre communautaire (optionnel)</div>
+
+    <div class="registry-row">
+      <div class="input-wrap">
+        <label>Dépôt GitHub du registre</label>
+        <input type="text" id="registryInput"
+          value="Lastexitfromnowhere/open-trust-registry"
+          placeholder="ex: monorg/open-trust-registry"
+          autocomplete="off" spellcheck="false">
+      </div>
+      <label class="toggle-wrap">
+        <div class="toggle" id="registryToggle"></div>
+        <span>Vérifier en ligne</span>
+      </label>
+    </div>
+    <p style="font-size:11px; color:var(--text-muted); margin-top:10px;">
+      Si activé, la page interrogera l'API GitHub pour confirmer que le hash de votre binaire
+      correspond à l'entrée publiée dans le registre de confiance.
+    </p>
+  </div>
+
+  <!-- Verify button -->
+  <button class="btn-verify" id="btnVerify" disabled>
+    <div class="spinner"></div>
+    <span class="btn-text">🔍 &nbsp;VÉRIFIER</span>
+  </button>
+
+  <!-- Progress -->
+  <div class="progress-wrap" id="progressWrap">
+    <div class="progress-label" id="progressLabel">Calcul du hash SHA-256…</div>
+    <div class="progress-bar-track">
+      <div class="progress-bar-fill" id="progressFill"></div>
+    </div>
+  </div>
+
+  <!-- Results -->
+  <section id="results">
+    <div class="section-sep">Résultats de la vérification</div>
+
+    <!-- Quick checks -->
+    <div class="card" id="checksCard">
+      <div class="card-title">Vérifications cryptographiques</div>
+      <div id="checksList"></div>
+    </div>
+
+    <!-- Trust badge -->
+    <div id="badgeWrap"></div>
+  </section>
+
+</div><!-- .wrapper -->
+
+<!-- Footer -->
+<footer>
+  <p>
+    <strong>OPEN-TRUST</strong> est open-source · Aucune donnée n'est envoyée à un serveur ·
+    Vérification réalisée par <a href="https://developer.mozilla.org/en-US/docs/Web/API/SubtleCrypto" target="_blank">WebCrypto API</a>
+    (SHA-256, SHA-512, Ed25519)
+  </p>
+  <p style="margin-top:6px;">
+    <a href="https://github.com/open-trust/open-trust" target="_blank">GitHub</a> ·
+    CLI: <code style="font-family:var(--mono);font-size:11px;">open-trust verify ./binary</code>
+  </p>
+</footer>
+
+<script>
+'use strict';
+
+// ── State ─────────────────────────────────────────────────────────────────────
+const state = {
+  binaryFile:     null,
+  provenanceFile: null,
+  registryOn:     false,
+};
+
+// ── DOM refs ──────────────────────────────────────────────────────────────────
+const dropZone       = document.getElementById('dropZone');
+const fileInput      = document.getElementById('fileInput');
+const filesList      = document.getElementById('filesList');
+const registryInput  = document.getElementById('registryInput');
+const registryToggle = document.getElementById('registryToggle');
+const btnVerify      = document.getElementById('btnVerify');
+const progressWrap   = document.getElementById('progressWrap');
+const progressFill   = document.getElementById('progressFill');
+const progressLabel  = document.getElementById('progressLabel');
+const results        = document.getElementById('results');
+const checksList     = document.getElementById('checksList');
+const badgeWrap      = document.getElementById('badgeWrap');
+
+// ── Helpers ───────────────────────────────────────────────────────────────────
+const hexEncode = buf =>
+  Array.from(new Uint8Array(buf)).map(b => b.toString(16).padStart(2,'0')).join('');
+
+const base64urlDecode = str => {
+  str = str.replace(/-/g,'+').replace(/_/g,'/');
+  while (str.length % 4) str += '=';
+  return Uint8Array.from(atob(str), c => c.charCodeAt(0));
+};
+
+function formatSize(n) {
+  if (n >= 1e9) return (n/1e9).toFixed(1)+' GB';
+  if (n >= 1e6) return (n/1e6).toFixed(1)+' MB';
+  if (n >= 1e3) return (n/1e3).toFixed(1)+' KB';
+  return n+' B';
+}
+
+async function readFileAsArrayBuffer(file, onProgress) {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onprogress = e => {
+      if (e.lengthComputable && onProgress) onProgress(e.loaded, e.total);
+    };
+    reader.onload  = e => resolve(e.target.result);
+    reader.onerror = () => reject(reader.error);
+    reader.readAsArrayBuffer(file);
+  });
+}
+
+async function sha256ofBytes(bytes) {
+  const buf = await crypto.subtle.digest('SHA-256', bytes);
+  return hexEncode(buf);
+}
+
+// ── File detection ────────────────────────────────────────────────────────────
+async function detectFileType(file) {
+  try {
+    const text = await file.slice(0, 4096).text();
+    const obj = JSON.parse(text);
+    if (obj.schema_version && obj.artifact && obj.signature) return 'provenance';
+    return 'unknown';
+  } catch { return 'binary'; }
+}
+
+async function handleFiles(files) {
+  for (const file of files) {
+    const type = await detectFileType(file);
+    if (type === 'provenance') {
+      state.provenanceFile = file;
+    } else {
+      state.binaryFile = file;
+    }
+  }
+  renderFilesPills();
+  updateVerifyBtn();
+}
+
+function renderFilesPills() {
+  filesList.innerHTML = '';
+  if (state.binaryFile) {
+    filesList.innerHTML += filePill(state.binaryFile, 'binary', '⬡');
+  }
+  if (state.provenanceFile) {
+    filesList.innerHTML += filePill(state.provenanceFile, 'provenance', '📄');
+  }
+}
+
+function filePill(f, type, icon) {
+  return `<div class="file-pill type-${type}">
+    <span class="dot"></span>${icon} ${f.name} <span style="opacity:.5">(${formatSize(f.size)})</span>
+  </div>`;
+}
+
+function updateVerifyBtn() {
+  btnVerify.disabled = !(state.binaryFile && state.provenanceFile);
+}
+
+// ── Drag and drop ─────────────────────────────────────────────────────────────
+dropZone.addEventListener('dragover', e => { e.preventDefault(); dropZone.classList.add('drag-over'); });
+dropZone.addEventListener('dragleave', () => dropZone.classList.remove('drag-over'));
+dropZone.addEventListener('drop', e => {
+  e.preventDefault();
+  dropZone.classList.remove('drag-over');
+  handleFiles([...e.dataTransfer.files]);
+});
+fileInput.addEventListener('change', () => handleFiles([...fileInput.files]));
+
+// ── Registry toggle ───────────────────────────────────────────────────────────
+registryToggle.addEventListener('click', () => {
+  state.registryOn = !state.registryOn;
+  registryToggle.classList.toggle('on', state.registryOn);
+});
+
+// ── Crypto verification ───────────────────────────────────────────────────────
+
+async function hashFile(file) {
+  progressWrap.classList.add('visible');
+  progressLabel.textContent = 'Calcul SHA-256 + SHA-512…';
+  progressFill.style.width = '0%';
+
+  const buffer = await readFileAsArrayBuffer(file, (loaded, total) => {
+    const pct = (loaded / total * 85).toFixed(0); // leave 15% for digest computation
+    progressFill.style.width = pct + '%';
+    progressLabel.textContent = `Calcul du hash… ${formatSize(loaded)} / ${formatSize(total)}`;
+  });
+
+  progressLabel.textContent = 'Finalisation des digests…';
+  progressFill.style.width = '90%';
+
+  const [sha256buf, sha512buf] = await Promise.all([
+    crypto.subtle.digest('SHA-256', buffer),
+    crypto.subtle.digest('SHA-512', buffer),
+  ]);
+
+  progressFill.style.width = '100%';
+  await sleep(200);
+  progressWrap.classList.remove('visible');
+
+  return {
+    sha256: hexEncode(sha256buf),
+    sha512: hexEncode(sha512buf),
+  };
+}
+
+async function verifyEd25519(pubkeyB64url, payloadStr, sigB64url) {
+  // Ed25519 support: Chrome 113+, Firefox 116+, Safari 17+
+  try {
+    const pubkeyBytes = base64urlDecode(pubkeyB64url);
+    const sigBytes    = base64urlDecode(sigB64url);
+    const msgBytes    = new TextEncoder().encode(payloadStr);
+
+    const key = await crypto.subtle.importKey(
+      'raw', pubkeyBytes, { name: 'Ed25519' }, false, ['verify']
+    );
+    return await crypto.subtle.verify({ name: 'Ed25519' }, key, sigBytes, msgBytes);
+  } catch (e) {
+    // Browser does not support Ed25519 SubtleCrypto
+    if (e.name === 'NotSupportedError' || e.name === 'DOMException') {
+      return null; // null = unsupported (not false = invalid)
+    }
+    throw e;
+  }
+}
+
+async function fetchFromGitHub(repo, fingerprint, sha256) {
+  const path = `keys/${fingerprint}/signatures/${sha256}.json`;
+  const url  = `https://api.github.com/repos/${repo}/contents/${path}`;
+  const res  = await fetch(url, { headers: { Accept: 'application/vnd.github.v3+json' } });
+  if (!res.ok) return null;
+  const data    = await res.json();
+  const content = atob(data.content.replace(/\n/g,''));
+  return JSON.parse(content);
+}
+
+function sleep(ms) { return new Promise(r => setTimeout(r, ms)); }
+
+// ── Main verify flow ──────────────────────────────────────────────────────────
+btnVerify.addEventListener('click', async () => {
+  btnVerify.classList.add('loading');
+  btnVerify.disabled = true;
+  results.classList.remove('visible');
+  checksList.innerHTML = '';
+  badgeWrap.innerHTML  = '';
+
+  try {
+    await runVerification();
+  } catch (err) {
+    addCheck('fail', 'Erreur inattendue', err.message);
+  } finally {
+    btnVerify.classList.remove('loading');
+    btnVerify.disabled = false;
+    results.classList.add('visible');
+  }
+});
+
+async function runVerification() {
+  // ── Parse provenance ────────────────────────────────────────────────────
+  let prov;
+  try {
+    const text = await state.provenanceFile.text();
+    prov = JSON.parse(text);
+  } catch {
+    addCheck('fail', 'provenance.json invalide',
+      'Le fichier ne peut pas être analysé comme JSON. Vérifiez que vous avez déposé le bon fichier.');
+    return;
+  }
+
+  // ── Hash binary ─────────────────────────────────────────────────────────
+  const { sha256, sha512 } = await hashFile(state.binaryFile);
+
+  // ── Check 1: SHA-256 ────────────────────────────────────────────────────
+  const sha256ok = sha256 === prov.artifact?.sha256;
+  addCheck(
+    sha256ok ? 'ok' : 'fail',
+    sha256ok ? 'Intégrité SHA-256 vérifiée' : 'Échec de l\'intégrité SHA-256',
+    sha256ok
+      ? `Le hash correspond à celui signé par le développeur.`
+      : `Le binaire a été modifié après signature. N'installez pas ce fichier.`,
+    [
+      { label: 'Calculé', value: sha256, match: sha256ok },
+      { label: 'Signé',   value: prov.artifact?.sha256 ?? '—', match: sha256ok },
+    ]
+  );
+  if (!sha256ok) { finalizeBadge(prov, 0, false); return; }
+
+  // ── Check 2: SHA-512 ────────────────────────────────────────────────────
+  const sha512ok = sha512 === prov.artifact?.sha512;
+  addCheck(
+    sha512ok ? 'ok' : 'fail',
+    sha512ok ? 'Intégrité SHA-512 vérifiée' : 'Échec de l\'intégrité SHA-512',
+    sha512ok
+      ? 'Le contrôle secondaire passe également.'
+      : 'Le hash SHA-512 ne correspond pas — le fichier est compromis.',
+    sha512ok ? [{ label: sha512.slice(0,32)+'…', value: '', match: true }] : []
+  );
+
+  // ── Check 3: Fingerprint consistency ────────────────────────────────────
+  let fpOk = false;
+  try {
+    const pubkeyBytes = base64urlDecode(prov.identity?.pubkey_ed25519 ?? '');
+    const computedFP  = await sha256ofBytes(pubkeyBytes);
+    fpOk = computedFP === prov.identity?.pubkey_fingerprint;
+    addCheck(
+      fpOk ? 'ok' : 'fail',
+      fpOk ? 'Empreinte de clé cohérente' : 'Empreinte de clé incohérente',
+      fpOk
+        ? 'La clé publique correspond bien à l\'empreinte déclarée dans le manifeste.'
+        : 'Le manifeste a été modifié — la clé et l\'empreinte ne correspondent plus.'
+    );
+  } catch {
+    addCheck('fail', 'Clé publique malformée', 'Impossible de décoder la clé publique du manifeste.');
+    finalizeBadge(prov, 0, false); return;
+  }
+
+  // ── Check 4: Ed25519 signature ───────────────────────────────────────────
+  const sigPayload = `${prov.artifact.sha256}|${prov.artifact.sha512}|${prov.signature?.timestamp}`;
+  const sigValid   = await verifyEd25519(
+    prov.identity?.pubkey_ed25519,
+    sigPayload,
+    prov.signature?.value
+  );
+
+  if (sigValid === null) {
+    addCheck('warn', 'Signature Ed25519 (non vérifiée)',
+      'Votre navigateur ne supporte pas Ed25519 via WebCrypto (Chrome 113+, Firefox 116+, Safari 17+ requis).\n' +
+      'Utilisez le CLI open-trust pour une vérification complète.');
+  } else {
+    addCheck(
+      sigValid ? 'ok' : 'fail',
+      sigValid ? 'Signature Ed25519 valide' : 'Signature Ed25519 INVALIDE',
+      sigValid
+        ? `Signé par ${prov.identity?.display_name ?? 'inconnu'} le ${prov.signature?.timestamp ?? '?'}`
+        : 'La signature cryptographique est invalide — le manifeste a été falsifié.\nN\'installez pas ce binaire.'
+    );
+    if (!sigValid) { finalizeBadge(prov, 0, false); return; }
+  }
+
+  // ── Check 5: Attestations ────────────────────────────────────────────────
+  const attestations = prov.attestations ?? [];
+  const threshold    = prov.trust_chain?.threshold ?? 2;
+  let validAtts      = 0;
+  const attDetails   = [];
+
+  for (const att of attestations) {
+    const attPayload = `${prov.artifact.sha256}|${att.statement}|${att.timestamp}`;
+    const valid      = await verifyEd25519(att.attester_pubkey, attPayload, att.signature);
+    if (valid === true) validAtts++;
+    attDetails.push({ ...att, valid });
+  }
+
+  if (attestations.length === 0) {
+    addCheck('warn', 'Aucune attestation de pairs',
+      'Ce binaire n\'a pas encore été validé par des pairs. Niveau de confiance : SELF-SIGNED.');
+  } else {
+    const ok = validAtts >= threshold;
+    addCheck(
+      ok ? 'ok' : 'warn',
+      ok
+        ? `Attestations vérifiées (${validAtts}/${threshold})`
+        : `Attestations insuffisantes (${validAtts}/${threshold} requis)`,
+      ok
+        ? `Le seuil de confiance est atteint — cet artefact est ${colWrap('TRUSTED', 'var(--green)')}.`
+        : `Il faut encore ${threshold - validAtts} attestation(s) de pairs pour le statut TRUSTED.`
+    );
+  }
+
+  // ── Check 6: Registry (optional) ────────────────────────────────────────
+  const repo = registryInput.value.trim();
+  if (state.registryOn && repo) {
+    try {
+      const remote = await fetchFromGitHub(repo, prov.identity.pubkey_fingerprint, sha256);
+      if (!remote) {
+        addCheck('warn', 'Non trouvé dans le registre',
+          `Aucune entrée publiée dans ${repo} pour ce hash.\n` +
+          `Publiez avec : open-trust publish --registry git@github.com:${repo}.git`);
+      } else if (remote.artifact?.sha256 !== sha256) {
+        addCheck('fail', 'Divergence avec le registre',
+          'Le hash dans le registre ne correspond pas au fichier local. Alerte de sécurité.');
+      } else {
+        addCheck('ok', 'Registre communautaire confirmé',
+          `Le hash correspond à l'entrée publiée dans ${repo}.`);
+      }
+    } catch (e) {
+      addCheck('warn', 'Registre inaccessible',
+        `Impossible de contacter l'API GitHub : ${e.message}`);
+    }
+  } else if (state.registryOn && !repo) {
+    addCheck('skip', 'Registre non configuré',
+      'Entrez l\'URL du dépôt GitHub pour activer la vérification en ligne.');
+  }
+
+  // ── Trust badge ──────────────────────────────────────────────────────────
+  finalizeBadge(prov, validAtts, true, attDetails, threshold);
+}
+
+// ── UI helpers ────────────────────────────────────────────────────────────────
+
+function addCheck(status, title, detail, hashes = []) {
+  const icons = { ok:'✓', fail:'✗', warn:'!', skip:'–' };
+  const delay = checksList.children.length * 80;
+
+  const row = document.createElement('div');
+  row.className = 'check-row';
+  row.style.animationDelay = delay + 'ms';
+
+  let hashesHTML = hashes.map(h =>
+    h.value
+      ? `<div style="margin-top:6px;">
+           <span style="font-size:10px;color:var(--text-muted);font-family:var(--mono);">${h.label}: </span>
+           <code class="hash-value ${h.match?'match':'mismatch'}">${h.value}</code>
+         </div>`
+      : `<span style="font-size:11px;color:var(--text-muted);font-family:var(--mono);">${h.label}</span>`
+  ).join('');
+
+  row.innerHTML = `
+    <div class="check-icon ${status}">${icons[status]}</div>
+    <div class="check-content">
+      <div class="check-title" style="color:${statusColor(status)}">${title}</div>
+      <div class="check-detail">${detail.replace(/\n/g,'<br>')}</div>
+      ${hashesHTML}
+    </div>`;
+
+  checksList.appendChild(row);
+}
+
+function statusColor(s) {
+  return { ok:'var(--green)', fail:'var(--red)', warn:'var(--amber)', skip:'var(--text-muted)' }[s];
+}
+
+function colWrap(text, color) {
+  return `<span style="color:${color};font-weight:700;">${text}</span>`;
+}
+
+function finalizeBadge(prov, validAtts, checksOk, attDetails = [], threshold = 2) {
+  const name    = prov.identity?.display_name ?? 'Inconnu';
+  const artName = prov.artifact?.name ?? '';
+  const artVer  = prov.artifact?.version ?? '';
+  const fp      = prov.identity?.pubkey_fingerprint ?? '';
+  const ts      = prov.signature?.timestamp ?? '';
+  const proofs  = prov.identity?.social_proofs ?? [];
+
+  let level, levelLabel, icon;
+  if (!checksOk) {
+    level = 'unknown'; levelLabel = 'INVALIDE'; icon = '✗';
+  } else if (validAtts >= threshold) {
+    level = 'trusted'; levelLabel = 'TRUSTED';  icon = '✓';
+  } else if (validAtts > 0) {
+    level = 'peer';    levelLabel = 'PEER-ATTESTED'; icon = '◐';
+  } else if (proofs.length > 0) {
+    level = 'self';    levelLabel = 'SELF-SIGNED'; icon = '◉';
+  } else {
+    level = 'unknown'; levelLabel = 'INCONNU'; icon = '?';
+  }
+
+  const socialHTML = proofs.map(sp => {
+    const icons = { github:'🐙', mastodon:'🐘', keybase:'🔑', gitlab:'🦊', twitter:'🐦', x:'✖' };
+    const icon  = icons[sp.platform.toLowerCase()] ?? '🌐';
+    return `<a class="social-chip" href="${sp.proof_url}" target="_blank" rel="noopener">
+      <span class="platform-icon">${icon}</span>${sp.platform} · ${sp.handle}
+    </a>`;
+  }).join('');
+
+  const attsHTML = (attDetails.length === 0)
+    ? '<p style="font-size:12px;color:var(--text-muted)">Aucune attestation.</p>'
+    : attDetails.map(att => `
+      <div class="attestation-item">
+        <span class="${att.valid === true ? 'att-valid' : att.valid === false ? 'att-invalid' : ''}">${att.valid === true ? '✓' : att.valid === false ? '✗' : '~'}</span>
+        <span class="att-scope">${att.scope}</span>
+        <span class="att-statement">${att.statement}</span>
+        <span class="att-fp">${att.attester_fingerprint?.slice(0,12)??''}…</span>
+      </div>`).join('');
+
+  badgeWrap.innerHTML = `
+    <div class="trust-badge">
+      <div class="badge-header ${level}">
+        <div class="badge-icon">${
+          level==='trusted'?'🛡️':level==='peer'?'🔍':level==='self'?'🔏':'⚠️'
+        }</div>
+        <div class="badge-meta">
+          <div class="badge-developer">${name}</div>
+          <div class="badge-artifact mono">${artName} ${artVer} · ${ts.slice(0,10)}</div>
+        </div>
+        <div class="badge-level">${icon} ${levelLabel}</div>
+      </div>
+
+      <div class="badge-body">
+        ${proofs.length > 0 ? `
+        <div class="badge-section">
+          <div class="badge-section-title">Identité sociale</div>
+          <div class="social-list">${socialHTML}</div>
+        </div>` : ''}
+
+        <div class="badge-section">
+          <div class="badge-section-title">Attestations de pairs (${validAtts} / ${threshold} requis)</div>
+          ${attsHTML}
+        </div>
+
+        <div class="badge-section">
+          <div class="badge-section-title">Empreinte de clé (fingerprint)</div>
+          <div class="fp-row">
+            <span class="fp-value mono">${fp}</span>
+            <button class="copy-btn" onclick="copyFP('${fp}')">copier</button>
+          </div>
+          <p style="font-size:11px;color:var(--text-muted);margin-top:6px;">
+            Vérifiez cette empreinte dans le profil public du développeur pour confirmer son identité.
+          </p>
+        </div>
+      </div>
+    </div>`;
+}
+
+function copyFP(fp) {
+  navigator.clipboard.writeText(fp).then(() => {
+    const btn = document.querySelector('.copy-btn');
+    if (btn) { btn.textContent = 'copié !'; setTimeout(() => btn.textContent = 'copier', 2000); }
+  });
+}
+
+// ── Browser Ed25519 support hint ──────────────────────────────────────────────
+(async () => {
+  try {
+    const dummy = new Uint8Array(32);
+    await crypto.subtle.importKey('raw', dummy, { name: 'Ed25519' }, false, ['verify']);
+  } catch {
+    const hint = document.createElement('p');
+    hint.style.cssText = 'text-align:center;font-size:11px;color:var(--amber);padding:8px 0';
+    hint.textContent = '⚠ Votre navigateur ne supporte pas Ed25519 SubtleCrypto — ' +
+      'la vérification de signature sera ignorée. Utilisez Chrome 113+, Firefox 116+ ou Safari 17+.';
+    document.querySelector('.hero').appendChild(hint);
+  }
+})();
+</script>
+</body>
+</html>

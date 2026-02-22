@@ -1,0 +1,42 @@
+# ── Private keys ──────────────────────────────────────────────────────────────
+# NEVER commit private keys or keystores
+*.key.json
+*.key
+*.pem
+*.p12
+*.pfx
+.open-trust/
+keystore/
+
+# ── Build artifacts ───────────────────────────────────────────────────────────
+open-trust
+open-trust.exe
+dist/
+*.exe
+*.dll
+*.so
+*.dylib
+
+# ── Test directories ──────────────────────────────────────────────────────────
+test_*/
+tmp_*/
+scratch/
+
+# ── Provenance files (user-generated, not source) ─────────────────────────────
+# Uncomment if you don't want to track your own provenance.json
+# provenance.json
+
+# ── Go build cache ────────────────────────────────────────────────────────────
+vendor/
+
+# ── OS artefacts ──────────────────────────────────────────────────────────────
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# ── Editor / IDE ──────────────────────────────────────────────────────────────
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
