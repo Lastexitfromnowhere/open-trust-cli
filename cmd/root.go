@@ -17,11 +17,12 @@ Usage:
   open-trust <command> [flags]
 
 Commands:
-  keygen    Generate an Ed25519 keypair (stored encrypted on disk)
-  sign      Hash a binary and produce a signed provenance.json
-  verify    Verify a binary against its provenance.json
-  attest    Issue a peer attestation and append it to a provenance.json
-  publish   Publish provenance.json to a Git-based trust registry
+  keygen          Generate an Ed25519 keypair (stored encrypted on disk)
+  sign            Hash a binary and produce a signed provenance.json
+  verify          Verify a binary against its provenance.json
+  attest          Issue a peer attestation and append it to a provenance.json
+  publish         Publish provenance.json to a Git-based trust registry
+  request-attest  Open a GitHub issue to request peer attestations
 
 Run 'open-trust <command> --help' for command-specific flags.
 `
@@ -44,6 +45,8 @@ func Execute() error {
 		return RunAttest(os.Args[2:])
 	case "publish":
 		return RunPublish(os.Args[2:])
+	case "request-attest":
+		return RunRequestAttest(os.Args[2:])
 	case "--help", "-h", "help":
 		fmt.Print(usage)
 		return nil

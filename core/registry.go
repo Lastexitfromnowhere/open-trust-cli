@@ -418,3 +418,21 @@ func IsGitURL(registryURL string) bool {
 	}
 	return true // git SSH, HTTPS .git, local file path, etc.
 }
+
+// GitHubRepoSlug extracts the "owner/repo" slug from a GitHub URL.
+// Handles both HTTPS and SSH formats:
+//
+//	https://github.com/owner/repo.git  →  "owner/repo"
+//	git@github.com:owner/repo.git      →  "owner/repo"
+//
+// Returns "" if the URL is not a recognised GitHub URL.
+func GitHubRepoSlug(gitURL string) string {
+	s := strings.TrimSuffix(gitURL, ".git")
+	if strings.HasPrefix(s, "https://github.com/") {
+		return strings.TrimPrefix(s, "https://github.com/")
+	}
+	if strings.HasPrefix(s, "git@github.com:") {
+		return strings.TrimPrefix(s, "git@github.com:")
+	}
+	return ""
+}
